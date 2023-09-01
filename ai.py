@@ -95,4 +95,4 @@ def calculate_accident():
     return jsonify({"error": "Failed to fetch map image."})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5001,)
