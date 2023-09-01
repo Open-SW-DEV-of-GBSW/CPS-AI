@@ -1,77 +1,98 @@
-# from flask import Flask, request, jsonify
-# from PIL import Image
-# import torch
-# from models.experimental import attempt_load
-
-# app = Flask(__name__)
-
-# # 모델 로드
-# model = attempt_load('my_project/exp4/weights/best.pt', map_location=torch.device('cpu'))
-
-# # 이미지 전처리 함수 (크기 조정, 정규화 등)
-# def preprocess_image(image):
-#     # 이미지 처리 로직을 구현하세요.
-#     # 필요한 경우 이미지 크기 조정, 정규화 등의 작업을 수행합니다.
-#     return preprocessed_image
-
-# # 객체 탐색 및 분류 함수
-# def detect_objects(image):
-#     # 객체 탐색 및 분류 로직을 구현하세요.
-#     # 입력 이미지에 대해 모델을 사용하여 객체 탐색과 분류를 수행합니다.
-#     results = model(preprocess_image(image))
-    
-#     # 결과 반환 (예: bounding box와 클래스 정보 포함된 리스트)
-#     return results
-
-# @app.route('/predict', methods=['POST'])
-# def predict():
-#     if 'image' not in request.files:
-#         return jsonify({'error': 'No image found'})
-    
-#     image_file = request.files['image']
-    
-#     try:
-#         image = Image.open(image_file)
-#         results = detect_objects(image)
-        
-#         # 결과 처리 (예: JSON 형태로 변환하여 반환)
-#         response_data = []
-        
-#         for result in results:
-#             label = result['label']
-#             confidence = result['confidence']
-#             bbox = result['bbox']
-            
-#             response_data.append({
-#                 'label': label,
-#                 'confidence': confidence,
-#                 'bbox': bbox
-#             })
-        
-#         return jsonify(response_data)
-    
-#     except Exception as e:
-#         return jsonify({'error': str(e)})
-
-# if __name__ == '__main__':
-#     app.run()
-
-
-import torch
+import requests
 from PIL import Image
+from io import BytesIO
+from flask import Flask, request, jsonify
 
-# 모델 로딩
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='my_project/exp4/weights/best.pt')  # or yolov5m, yolov5l, yolov5x
+app = Flask(__name__)
 
-# 이미지 로딩 및 변환
-img = Image.open('folder/train/images/20230720095731.png')  # your image path
+def get_static_map_image(api_key, latitude, longitude, zoom=15, size="400x400"):
+    base_url = "https://maps.googleapis.com/maps/api/staticmap"
+    params = {
+        "center": f"{latitude},{longitude}",
+        "zoom": zoom,
+        "size": size,
+        "key": api_key,
+    }
+    response = requests.get(base_url, params=params)
 
-# Inference
-results = model(img)
+    if response.status_code == 200:
+        image = Image.open(BytesIO(response.content))
+        return image
+    else:
+        print("Failed to fetch map image.")
+        return None
 
-# 결과 출력
-results.print()  # print results to screen
+def highlight_color(image, target_color, tolerance):
+    rgb_image = image.convert("RGB")
+    width, height = image.size
+    highlighted_pixels = []
 
-# 결과를 이미지 위에 그리기 (optional)
-results.show()  # display results superimposed on image
+    for y in range(height):
+        for x in range(width):
+            r, g, b = rgb_image.getpixel((x, y))
+            if color_within_range((r, g, b), target_color, tolerance):
+                highlighted_pixels.append((x, y))
+                image.putpixel((x, y), (255, 0, 0))
 
+    return image, highlighted_pixels
+
+def color_within_range(pixel_color, target_color, tolerance):
+    r1, g1, b1 = pixel_color
+    r2, g2, b2 = target_color
+
+    if abs(r1 - r2) <= tolerance and abs(g1 - g2) <= tolerance and abs(b1 - b2) <= tolerance:
+        return True
+
+    return False
+
+def get_weather_info(latitude, longitude):
+    api_key = "ba20a43caf4fd585232c2b3c0bb2e396"
+    url = f"https://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={api_key}"
+    response = requests.get(url)
+    weather_data = response.json()
+    weather_condition = weather_data.get("weather")[0].get("main")
+    if weather_condition in ["Clear", "Clouds"]:
+        return "good"
+    else:
+        return "bad"
+@app.route("/", methods=["POST"])
+def calculate_accident():
+    data = request.json
+    latitude = data.get("latitude")
+    longitude = data.get("longitude")
+    total_people = data.get("total_people")
+
+    api_key = "AIzaSyDdrlQo7Gkuap-hK9c3WGUe7dyQ526hGqA"
+    zoom_level = 17
+    image_size = "400x400"
+    map_image = get_static_map_image(api_key, latitude, longitude, zoom_level, image_size)
+
+    if map_image:
+        highlighted_image, highlighted_pixels = highlight_color(map_image, (255, 255, 255), 3)
+        pixel_area_cm_sq = 0.3494371482
+        highlighted_area_cm_sq = len(highlighted_pixels) * pixel_area_cm_sq
+
+        min_distance = 0.4 
+        min_distance_sq = min_distance ** 2
+        required_area = total_people * min_distance_sq
+
+        area_difference = required_area - highlighted_area_cm_sq
+
+        accident_rate = 0.0
+        if required_area > 0:
+            accident_rate = min(100.0, max(0.0, 100.0 * area_difference / required_area))
+
+        weather_info = get_weather_info(latitude, longitude)
+
+        if weather_info == "good":
+            accident_rate += 10
+        elif weather_info == "bad":
+            accident_rate -= 10
+
+        response_data = {"accident_rate": round(accident_rate, 2)}
+        return jsonify(response_data)
+
+    return jsonify({"error": "Failed to fetch map image."})
+
+if __name__ == "__main__":
+    app.run(debug=True)
