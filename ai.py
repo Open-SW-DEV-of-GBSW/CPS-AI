@@ -2,8 +2,10 @@ import requests
 from PIL import Image
 from io import BytesIO
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 def get_static_map_image(api_key, latitude, longitude, zoom=15, size="400x400"):
     base_url = "https://maps.googleapis.com/maps/api/staticmap"
@@ -100,4 +102,4 @@ def calculate_accident():
     return jsonify({"error": "Failed to fetch map image."})
 
 if __name__ == "__main__":
-    app.run(port=5001)
+    app.run(port=5001)  
