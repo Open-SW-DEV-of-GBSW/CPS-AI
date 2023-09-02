@@ -55,6 +55,7 @@ def get_weather_info(latitude, longitude):
         return "good"
     else:
         return "bad"
+
 @app.route("/", methods=["POST"])
 def calculate_accident():
     data = request.json
@@ -88,11 +89,15 @@ def calculate_accident():
             accident_rate += 10
         elif weather_info == "bad":
             accident_rate -= 10
+        if accident_rate > 50:
+            predicted_victims = int(total_people * (accident_rate - 50) / 70)
+        else:
+            predicted_victims = 0
 
-        response_data = {"accident_rate": round(accident_rate, 2)}
+        response_data = {"accident_rate": round(accident_rate, 2), "predicted_victims": predicted_victims}
         return jsonify(response_data)
 
     return jsonify({"error": "Failed to fetch map image."})
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001,)
+    app.run(debug=True, port=5001)
