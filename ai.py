@@ -4,18 +4,17 @@ from PIL import Image
 from io import BytesIO
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import torch
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
+
 app = Flask(__name__)
 CORS(app)
 
 
 
 model_path = '/Users/seungsukim/Downloads/CPS-AI/my_project/exp6/weights/best.pt'
-model = torch.load(model_path, map_location='cpu')
 
 def get_static_map_image(api_key, latitude, longitude, zoom=15, size="400x400"):
     base_url = "https://maps.googleapis.com/maps/api/staticmap"
