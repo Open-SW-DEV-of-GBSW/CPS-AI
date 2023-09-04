@@ -15,6 +15,7 @@ def get_static_map_image(api_key, latitude, longitude, zoom=15, size="400x400"):
         "size": size,
         "key": api_key,
     }
+    
     response = requests.get(base_url, params=params)
 
     if response.status_code == 200:
@@ -57,7 +58,6 @@ def get_weather_info(latitude, longitude):
         return "good"
     else:
         return "bad"
-
 @app.route("/", methods=["POST"])
 def calculate_accident():
     data = request.json
@@ -81,9 +81,8 @@ def calculate_accident():
 
         area_difference = required_area - highlighted_area_cm_sq
 
-        accident_rate = 0.0
-        if required_area > 0:
-            accident_rate = min(100.0, max(0.0, 100.0 * area_difference / required_area))
+        # 범위를 0.1에서 99.9로 제한
+        accident_rate = min(99.9, max(0.1, 100.0 * area_difference / required_area))
 
         weather_info = get_weather_info(latitude, longitude)
 
@@ -91,6 +90,13 @@ def calculate_accident():
             accident_rate += 10
         elif weather_info == "bad":
             accident_rate -= 10
+        
+        # 다시 범위를 0.1에서 99.9로 제한
+        if accident_rate >99.9:
+            accident_rate == 99.9
+        elif accident_rate < 0:
+            accident_rate == 0.1
+
         if accident_rate > 50:
             predicted_victims = int(total_people * (accident_rate - 50) / 70)
         else:
@@ -102,4 +108,4 @@ def calculate_accident():
     return jsonify({"error": "Failed to fetch map image."})
 
 if __name__ == "__main__":
-    app.run(port=5001)  
+    app.run(port=5001)
