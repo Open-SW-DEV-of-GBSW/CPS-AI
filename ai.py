@@ -65,7 +65,7 @@ def get_weather_info(latitude, longitude):
         return "good"
     else:
         return "bad"
-@app.route("/", methods=["POST"])
+@app.route("/api", methods=["POST"])
 def calculate_accident():
     data = request.json
     latitude = data.get("latitude")
