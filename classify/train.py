@@ -38,7 +38,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from classify import val as validate
 from models.experimental import attempt_load
-from models.yolo import ClassificationModel, DetectionModel
+from my_yolo import ClassificationModel, DetectionModel
 from utils.dataloaders import create_classification_dataloader
 from utils.general import (DATASETS_DIR, LOGGER, TQDM_BAR_FORMAT, WorkingDirectory, check_git_info, check_git_status,
                            check_requirements, colorstr, download, increment_path, init_seeds, print_args, yaml_save)

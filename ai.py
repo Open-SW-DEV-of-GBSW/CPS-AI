@@ -1,5 +1,4 @@
 import requests
-import requests
 from PIL import Image
 from io import BytesIO
 from flask import Flask, request, jsonify
@@ -12,9 +11,24 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
+model_path = 'my_project/exp6/weights/best.pt'  # YOLOv5 모델 파일의 경로로 수정
 
+from yolov5.models.experimental import attempt_load
+from yolov5.utils.torch_utils import select_device
 
-model_path = '/Users/seungsukim/Downloads/CPS-AI/my_project/exp6/weights/best.pt'
+device = select_device('cpu')
+yolo_model = attempt_load(model_path)
+yolo_model.eval()
+
+def calculate_road_area(image, yolo_model):
+    results = yolo_model(image)
+    road_area = 0
+    for det in results.pred[0]:
+        if det is not None and len(det) > 0:
+            for *xyxy, conf, cls in det:
+                area = (xyxy[2] - xyxy[0]) * (xyxy[3] - xyxy[1])
+                road_area += area
+    return road_area
 
 def get_static_map_image(api_key, latitude, longitude, zoom=15, size="400x400"):
     base_url = "https://maps.googleapis.com/maps/api/staticmap"
@@ -33,6 +47,14 @@ def get_static_map_image(api_key, latitude, longitude, zoom=15, size="400x400"):
     else:
         print("Failed to fetch map image.")
         return None
+
+def calculate_object_area(object):
+    x1, y1, x2, y2 = object
+    width = x2 - x1
+    height = y2 - y1
+    area = width * height
+    return area
+
 
 def highlight_color(image, target_color, tolerance):
     rgb_image = image.convert("RGB")
@@ -65,6 +87,14 @@ def get_weather_info(latitude, longitude):
         return "good"
     else:
         return "bad"
+        
+def load_yolo_model(model_path):
+    model = attempt_load(model_path)
+    model.eval()
+    return model
+
+yolo_model = load_yolo_model(model_path)
+
 @app.route("/", methods=["POST"])
 def calculate_accident():
     data = request.json
@@ -113,5 +143,3 @@ def calculate_accident():
 
 if __name__ == "__main__":
     app.run(port=5001)
-
-
