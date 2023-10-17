@@ -11,7 +11,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-model_path = 'my_project/exp6/weights/best.pt'  # YOLOv5 모델 파일의 경로로 수정
+model_path = 'my_project/exp6/weights/best.pt'
 
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.torch_utils import select_device
