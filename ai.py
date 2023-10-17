@@ -87,7 +87,7 @@ def get_weather_info(latitude, longitude):
         return "good"
     else:
         return "bad"
-<<<<<<< HEAD
+
         
 def load_yolo_model(model_path):
     model = attempt_load(model_path)
@@ -97,9 +97,6 @@ def load_yolo_model(model_path):
 yolo_model = load_yolo_model(model_path)
 
 @app.route("/", methods=["POST"])
-=======
-@app.route("/api", methods=["POST"])
->>>>>>> c3f25028e4917fe62833d9d53c26ba1da0de676d
 def calculate_accident():
     data = request.json
     latitude = data.get("latitude")

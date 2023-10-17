@@ -17,10 +17,9 @@ from yolov5.models.experimental import attempt_load
 from yolov5.utils.torch_utils import select_device
 
 device = select_device('cpu')
-yolo_model = attempt_load(model_path, map_location=device)
+yolo_model = attempt_load(model_path)
 yolo_model.eval()
 
-# 이미지에서 도로 면적을 계산하는 함수
 def calculate_road_area(image, yolo_model):
     results = yolo_model(image)
     road_area = 0
@@ -30,7 +29,7 @@ def calculate_road_area(image, yolo_model):
                 area = (xyxy[2] - xyxy[0]) * (xyxy[3] - xyxy[1])
                 road_area += area
     return road_area
-    
+
 def get_static_map_image(api_key, latitude, longitude, zoom=15, size="400x400"):
     base_url = "https://maps.googleapis.com/maps/api/staticmap"
     params = {
@@ -50,7 +49,7 @@ def get_static_map_image(api_key, latitude, longitude, zoom=15, size="400x400"):
         return None
 
 def calculate_object_area(object):
-    x1, y1, x2, y2 = object  # 객체의 bounding box 정보
+    x1, y1, x2, y2 = object
     width = x2 - x1
     height = y2 - y1
     area = width * height
@@ -88,19 +87,19 @@ def get_weather_info(latitude, longitude):
         return "good"
     else:
         return "bad"
+<<<<<<< HEAD
         
 def load_yolo_model(model_path):
-# YOLOv5 모델 초기화
-    model = YOLOv5()  # 모델을 생성
-    checkpoint = torch.load(model_path)  # 학습된 가중치 파일을 로드
-    model.load_state_dict(checkpoint['model'])  # 모델에 가중치를 불러옴
-    model.eval()  # 모델을 평가 모드로 설정
-
+    model = attempt_load(model_path)
+    model.eval()
     return model
 
 yolo_model = load_yolo_model(model_path)
 
 @app.route("/", methods=["POST"])
+=======
+@app.route("/api", methods=["POST"])
+>>>>>>> c3f25028e4917fe62833d9d53c26ba1da0de676d
 def calculate_accident():
     data = request.json
     latitude = data.get("latitude")
